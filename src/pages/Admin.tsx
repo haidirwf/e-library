@@ -141,7 +141,7 @@ export default function Admin() {
               <div>
                 <Input
                   type="password"
-                  placeholder="Masukkan PIN..."
+                  placeholder="PIN = 1234"
                   value={pinInput}
                   onChange={(e) => {
                     setPinInput(e.target.value);
