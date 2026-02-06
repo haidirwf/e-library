@@ -1,6 +1,7 @@
 import { GoogleBooksResponse, GoogleBookVolume, Book } from '@/types/library';
 
 const GOOGLE_BOOKS_API = 'https://www.googleapis.com/books/v1/volumes';
+const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
 
 // Search queries for Indonesian school library books
 const LIBRARY_QUERIES = [
@@ -14,13 +15,13 @@ const LIBRARY_QUERIES = [
 export async function searchGoogleBooks(query: string): Promise<GoogleBookVolume[]> {
   try {
     const response = await fetch(
-      `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(query)}&maxResults=10&langRestrict=id`
+      `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(query)}&maxResults=10&langRestrict=id&key=${API_KEY}`
     );
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch from Google Books API');
     }
-    
+
     const data: GoogleBooksResponse = await response.json();
     return data.items || [];
   } catch (error) {
@@ -32,13 +33,13 @@ export async function searchGoogleBooks(query: string): Promise<GoogleBookVolume
 export async function searchByISBN(isbn: string): Promise<GoogleBookVolume | null> {
   try {
     const response = await fetch(
-      `${GOOGLE_BOOKS_API}?q=isbn:${encodeURIComponent(isbn)}&maxResults=1`
+      `${GOOGLE_BOOKS_API}?q=isbn:${encodeURIComponent(isbn)}&maxResults=1&key=${API_KEY}`
     );
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch from Google Books API');
     }
-    
+
     const data: GoogleBooksResponse = await response.json();
     return data.items?.[0] || null;
   } catch (error) {
@@ -49,13 +50,13 @@ export async function searchByISBN(isbn: string): Promise<GoogleBookVolume | nul
 
 export function extractBookData(volume: GoogleBookVolume) {
   const { volumeInfo } = volume;
-  
+
   return {
     title: volumeInfo.title || '',
     author: volumeInfo.authors?.join(', ') || '',
     publisher: volumeInfo.publisher || '',
-    year: volumeInfo.publishedDate 
-      ? parseInt(volumeInfo.publishedDate.substring(0, 4), 10) 
+    year: volumeInfo.publishedDate
+      ? parseInt(volumeInfo.publishedDate.substring(0, 4), 10)
       : new Date().getFullYear(),
     description: volumeInfo.description || '',
     cover_url: volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || '',
@@ -66,27 +67,26 @@ export function extractBookData(volume: GoogleBookVolume) {
   };
 }
 
-export function convertVolumeToBook(volume: GoogleBookVolume, index: number): Book {
+export function convertVolumeToBook(volume: GoogleBookVolume): Book {
   const bookData = extractBookData(volume);
-  
-  // Map Google Books categories to our categories
+
   const categoryMap: Record<string, string> = {
-    'Fiction': 'Fiksi',
-    'Novel': 'Novel',
-    'History': 'Sejarah',
-    'Science': 'Sains',
-    'Education': 'Non-Fiksi',
-    'Religion': 'Agama',
-    'Technology': 'Teknologi',
-    'Art': 'Seni',
-    'Sports': 'Olahraga',
-    'Biography': 'Biografi',
-    'Comics': 'Komik',
+    Fiction: 'Fiksi',
+    Novel: 'Novel',
+    History: 'Sejarah',
+    Science: 'Sains',
+    Education: 'Non-Fiksi',
+    Religion: 'Agama',
+    Technology: 'Teknologi',
+    Art: 'Seni',
+    Sports: 'Olahraga',
+    Biography: 'Biografi',
+    Comics: 'Komik',
   };
 
   let mappedCategory = 'Lainnya';
   const originalCategory = volume.volumeInfo.categories?.[0] || '';
-  
+
   for (const [key, value] of Object.entries(categoryMap)) {
     if (originalCategory.toLowerCase().includes(key.toLowerCase())) {
       mappedCategory = value;
@@ -104,35 +104,29 @@ export function convertVolumeToBook(volume: GoogleBookVolume, index: number): Bo
     description: bookData.description || 'Deskripsi tidak tersedia.',
     cover_url: bookData.cover_url,
     isbn: bookData.isbn,
-    stock: Math.floor(Math.random() * 5) + 1, // Random stock 1-5
+    stock: Math.floor(Math.random() * 5) + 1,
     status: 'available',
   };
 }
 
 export async function fetchLibraryBooks(): Promise<Book[]> {
   try {
-    // Fetch from multiple queries to get diverse books
     const allBooks: Book[] = [];
     const seenIds = new Set<string>();
 
     for (const query of LIBRARY_QUERIES) {
       try {
         const volumes = await searchGoogleBooks(query);
-        
+
         for (const volume of volumes) {
-          // Skip duplicates
           if (seenIds.has(volume.id)) continue;
+          if (!volume.volumeInfo.imageLinks?.thumbnail) continue;
+
           seenIds.add(volume.id);
-          
-          // Only include books with covers for better UX
-          if (volume.volumeInfo.imageLinks?.thumbnail) {
-            const book = convertVolumeToBook(volume, allBooks.length);
-            allBooks.push(book);
-          }
+          allBooks.push(convertVolumeToBook(volume));
         }
-        
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+
+        await new Promise((r) => setTimeout(r, 100));
       } catch (error) {
         console.error(`Error fetching query "${query}":`, error);
       }
