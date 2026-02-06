@@ -108,33 +108,3 @@ export function convertVolumeToBook(volume: GoogleBookVolume): Book {
     status: 'available',
   };
 }
-
-export async function fetchLibraryBooks(): Promise<Book[]> {
-  try {
-    const allBooks: Book[] = [];
-    const seenIds = new Set<string>();
-
-    for (const query of LIBRARY_QUERIES) {
-      try {
-        const volumes = await searchGoogleBooks(query);
-
-        for (const volume of volumes) {
-          if (seenIds.has(volume.id)) continue;
-          if (!volume.volumeInfo.imageLinks?.thumbnail) continue;
-
-          seenIds.add(volume.id);
-          allBooks.push(convertVolumeToBook(volume));
-        }
-
-        await new Promise((r) => setTimeout(r, 100));
-      } catch (error) {
-        console.error(`Error fetching query "${query}":`, error);
-      }
-    }
-
-    return allBooks;
-  } catch (error) {
-    console.error('Error fetching library books:', error);
-    return [];
-  }
-}

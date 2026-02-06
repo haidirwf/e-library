@@ -1,12 +1,10 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Book, Loan } from '@/types/library';
-import { fetchLibraryBooks } from '@/lib/googleBooks';
 
 interface LibraryContextType {
   // Books
   books: Book[];
   booksLoading: boolean;
-  fetchBooks: () => Promise<void>;
   addBook: (book: Omit<Book, 'id' | 'status'>) => Promise<Book>;
   updateBook: (id: string, updates: Partial<Book>) => Promise<void>;
   deleteBook: (id: string) => Promise<void>;
@@ -30,24 +28,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [booksLoading, setBooksLoading] = useState(true);
   const [loansLoading, setLoansLoading] = useState(false);
 
-  // Fetch books from Google Books on mount
-  useEffect(() => {
-    fetchBooks();
-  }, []);
 
-  // Book operations
-  const fetchBooks = useCallback(async () => {
-    setBooksLoading(true);
-    try {
-      const googleBooks = await fetchLibraryBooks();
-      setBooks(googleBooks);
-    } catch (error) {
-      console.error('Failed to fetch books:', error);
-      setBooks([]);
-    } finally {
-      setBooksLoading(false);
-    }
-  }, []);
 
   const addBook = useCallback(async (book: Omit<Book, 'id' | 'status'>) => {
     setBooksLoading(true);
@@ -180,7 +161,6 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       value={{
         books,
         booksLoading,
-        fetchBooks,
         addBook,
         updateBook,
         deleteBook,
