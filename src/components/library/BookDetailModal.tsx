@@ -109,22 +109,28 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
         </DialogHeader>
 
         <div className="grid md:grid-cols-[200px,1fr] gap-6 mt-4">
-          {/* Book Cover */}
-          <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted shadow-inner border">
-            {book.cover_url ? (
-              <img
-                src={book.cover_url}
-                alt={book.title}
-                className="h-full w-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            ) : null}
-            <div className={`absolute inset-0 flex items-center justify-center bg-muted`}>
-              <BookOpen className="h-16 w-16 text-muted-foreground/30" />
-            </div>
-          </div>
+  {/* Book Cover */}
+  <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted shadow-md border">
+    {book.cover_url ? (
+      <img
+        src={book.cover_url.replace('http://', 'https://')} 
+        alt={book.title}
+        className="h-full w-full object-cover relative z-10"
+        referrerPolicy="no-referrer" 
+        onError={(e) => {
+          // Jika gambar gagal load, sembunyikan elemen img
+          e.currentTarget.style.display = 'none';
+          // Tampilkan icon fallback yang ada di belakangnya
+          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+        }}
+      />
+    ) : null}
+    {/* Icon Fallback - Selalu siap di belakang gambar */}
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted text-muted-foreground/40 gap-2">
+      <BookOpen className="h-12 w-12" />
+      <span className="text-[10px] font-medium uppercase">No Cover</span>
+    </div>
+  </div>
 
           {/* Book Details */}
           <div className="space-y-4">
