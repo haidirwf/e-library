@@ -12,6 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { BookOpen, User, GraduationCap, IdCard, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -20,6 +27,17 @@ interface BookDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+// Daftar kelas sesuai permintaan
+const CLASS_OPTIONS = [
+  "7 SMP",
+  "8 SMP",
+  "9 SMP",
+  "10 TKJ",
+  "10 RPL",
+  "11 TKJ",
+  "11 RPL",
+];
 
 export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalProps) {
   const { createLoan } = useLibrary();
@@ -38,10 +56,10 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
   const handleBorrow = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.student_name.trim() || !formData.student_class.trim() || !formData.student_nis.trim()) {
+    if (!formData.student_name.trim() || !formData.student_class || !formData.student_nis.trim()) {
       toast({
         title: 'Form tidak lengkap',
-        description: 'Mohon lengkapi semua field yang diperlukan.',
+        description: 'Mohon lengkapi semua field termasuk pilihan kelas.',
         variant: 'destructive',
       });
       return;
@@ -52,7 +70,7 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
       await createLoan({
         book_id: book.id,
         student_name: formData.student_name.trim(),
-        student_class: formData.student_class.trim(),
+        student_class: formData.student_class,
         student_nis: formData.student_nis.trim(),
         borrow_date: new Date().toISOString().split('T')[0],
       });
@@ -92,7 +110,7 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
 
         <div className="grid md:grid-cols-[200px,1fr] gap-6 mt-4">
           {/* Book Cover */}
-          <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted">
+          <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted shadow-inner border">
             {book.cover_url ? (
               <img
                 src={book.cover_url}
@@ -100,12 +118,11 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
                 className="h-full w-full object-cover"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }}
               />
             ) : null}
-            <div className={`absolute inset-0 flex items-center justify-center bg-muted ${book.cover_url ? 'hidden' : ''}`}>
-              <BookOpen className="h-16 w-16 text-muted-foreground/50" />
+            <div className={`absolute inset-0 flex items-center justify-center bg-muted`}>
+              <BookOpen className="h-16 w-16 text-muted-foreground/30" />
             </div>
           </div>
 
@@ -114,23 +131,25 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
             <div className="flex items-center gap-2">
               <Badge
                 variant={isAvailable ? 'default' : 'destructive'}
-                className={isAvailable ? 'bg-primary' : ''}
+                className={isAvailable ? 'bg-green-600 hover:bg-green-700' : ''}
               >
-                {isAvailable ? `Tersedia (${book.stock} buku)` : 'Tidak Tersedia'}
+                {isAvailable ? `Tersedia (${book.stock} buku)` : 'Stok Habis'}
               </Badge>
-              <Badge variant="secondary">{book.category}</Badge>
+              <Badge variant="outline">{book.category}</Badge>
             </div>
 
-            <div className="space-y-2 text-sm">
-              <p><span className="font-medium">Penerbit:</span> {book.publisher}</p>
-              <p><span className="font-medium">Tahun:</span> {book.year}</p>
-              <p><span className="font-medium">ISBN:</span> {book.isbn || '-'}</p>
+            <div className="space-y-1 text-sm border-b pb-3">
+              <p><span className="text-muted-foreground">Penerbit:</span> {book.publisher}</p>
+              <p><span className="text-muted-foreground">Tahun:</span> {book.year}</p>
+              <p><span className="text-muted-foreground">ISBN:</span> {book.isbn || '-'}</p>
             </div>
 
             {book.description && (
               <div>
-                <h4 className="font-medium mb-1">Deskripsi</h4>
-                <p className="text-sm text-muted-foreground line-clamp-4">{book.description}</p>
+                <h4 className="text-sm font-semibold mb-1">Deskripsi</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {book.description}
+                </p>
               </div>
             )}
 
@@ -141,46 +160,48 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
                 className="w-full"
                 size="lg"
               >
-                {isAvailable ? 'Pinjam Buku Ini' : 'Stok Habis'}
+                {isAvailable ? 'Pinjam Sekarang' : 'Tidak Bisa Dipinjam'}
               </Button>
             ) : (
-              <form onSubmit={handleBorrow} className="space-y-4 border-t pt-4">
-                <h4 className="font-semibold flex items-center gap-2">
+              <form onSubmit={handleBorrow} className="space-y-4 bg-muted/30 p-4 rounded-lg border">
+                <h4 className="font-semibold text-sm flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Form Peminjaman
+                  Informasi Peminjam
                 </h4>
 
                 <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="student_name" className="flex items-center gap-2">
-                      <User className="h-3 w-3" /> Nama Lengkap
-                    </Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="student_name" className="text-xs">Nama Lengkap</Label>
                     <Input
                       id="student_name"
-                      placeholder="Masukkan nama lengkap"
+                      placeholder="Nama sesuai absen"
                       value={formData.student_name}
                       onChange={(e) => setFormData((prev) => ({ ...prev, student_name: e.target.value }))}
                       required
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="student_class" className="flex items-center gap-2">
-                      <GraduationCap className="h-3 w-3" /> Kelas
-                    </Label>
-                    <Input
-                      id="student_class"
-                      placeholder="Contoh: XII IPA 1"
+                  <div className="space-y-1.5">
+                    <Label htmlFor="student_class" className="text-xs">Kelas</Label>
+                    <Select
                       value={formData.student_class}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, student_class: e.target.value }))}
-                      required
-                    />
+                      onValueChange={(value) => setFormData((prev) => ({ ...prev, student_class: value }))}
+                    >
+                      <SelectTrigger id="student_class">
+                        <SelectValue placeholder="Pilih Kelas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CLASS_OPTIONS.map((item) => (
+                          <SelectItem key={item} value={item}>
+                            {item}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div>
-                    <Label htmlFor="student_nis" className="flex items-center gap-2">
-                      <IdCard className="h-3 w-3" /> NIS (Nomor Induk Siswa)
-                    </Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="student_nis" className="text-xs">NIS (Nomor Induk Siswa)</Label>
                     <Input
                       id="student_nis"
                       placeholder="Masukkan NIS"
@@ -191,17 +212,17 @@ export function BookDetailModal({ book, open, onOpenChange }: BookDetailModalPro
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-2">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => setShowBorrowForm(false)}
                     className="flex-1"
                   >
                     Batal
                   </Button>
                   <Button type="submit" disabled={isSubmitting} className="flex-1">
-                    {isSubmitting ? 'Memproses...' : 'Konfirmasi Pinjam'}
+                    {isSubmitting ? 'Memproses...' : 'Konfirmasi'}
                   </Button>
                 </div>
               </form>
