@@ -167,7 +167,7 @@ export function AdminBookForm({ book, open, onOpenChange, onSave, onUpdate }: Ad
           {/* Google Books Search Section */}
           {!isEditing && (
             <div className="border rounded-lg p-4 bg-muted/40 mb-6 space-y-3 relative">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Label className="text-xs font-bold tracking-wider text-muted-foreground flex items-center gap-2">
                 <Search className="h-3 w-3" />
                 Quick Import (Google Books)
               </Label>
@@ -193,7 +193,7 @@ export function AdminBookForm({ book, open, onOpenChange, onSave, onUpdate }: Ad
               {searchResults.length > 0 && (
                 <div className="absolute z-50 left-4 right-4 mt-1 border rounded-md bg-background shadow-xl max-h-[250px] overflow-y-auto divide-y animate-in fade-in zoom-in-95">
                   <div className="p-2 bg-muted/20 flex justify-between items-center sticky top-0 backdrop-blur-sm">
-                    <span className="text-[10px] font-bold text-muted-foreground ml-2">HASIL PENCARIAN</span>
+                    <span className="text-[10px] font-bold text-muted-foreground ml-2">Hasil Pencarian</span>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSearchResults([])}>
                       <X className="h-3 w-3" />
                     </Button>

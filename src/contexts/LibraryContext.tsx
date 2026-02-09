@@ -1,15 +1,14 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Book, Loan } from '@/types/library';
+import { searchGoogleBooks, convertVolumeToBook, LIBRARY_QUERIES } from '@/lib/googleBooks';
+import { toast } from '@/hooks/use-toast';
 
 interface LibraryContextType {
-  // Books
   books: Book[];
   booksLoading: boolean;
   addBook: (book: Omit<Book, 'id' | 'status'>) => Promise<Book>;
   updateBook: (id: string, updates: Partial<Book>) => Promise<void>;
   deleteBook: (id: string) => Promise<void>;
-  
-  // Loans
   loans: Loan[];
   loansLoading: boolean;
   fetchLoans: () => Promise<void>;
@@ -28,24 +27,43 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [booksLoading, setBooksLoading] = useState(true);
   const [loansLoading, setLoansLoading] = useState(false);
 
-
-
-  const addBook = useCallback(async (book: Omit<Book, 'id' | 'status'>) => {
+  // Fungsi untuk fetch 20 buku dari Google Books API
+  const fetchInitialBooks = useCallback(async () => {
     setBooksLoading(true);
+    try {
+      // Ambil query acak agar hasil tidak selalu sama saat refresh
+      const randomQuery = LIBRARY_QUERIES[Math.floor(Math.random() * LIBRARY_QUERIES.length)];
+      const items = await searchGoogleBooks(randomQuery);
+      
+      const formattedBooks = items.map(item => convertVolumeToBook(item));
+      setBooks(formattedBooks);
+    } catch (error) {
+      toast({
+        title: 'Gagal memuat buku',
+        description: 'Pastikan koneksi internet aktif dan API Key benar.',
+        variant: 'destructive',
+      });
+    } finally {
+      setBooksLoading(false);
+    }
+  }, []);
+
+  // Jalankan saat pertama kali aplikasi dibuka
+  useEffect(() => {
+    fetchInitialBooks();
+  }, [fetchInitialBooks]);
+
+  const addBook = useCallback(async (bookData: Omit<Book, 'id' | 'status'>) => {
     const newBook: Book = {
-      ...book,
+      ...bookData,
       id: `local-${Date.now()}`,
-      status: book.stock > 0 ? 'available' : 'borrowed',
+      status: bookData.stock > 0 ? 'available' : 'borrowed',
     };
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    setBooks((prev) => [...prev, newBook]);
-    setBooksLoading(false);
+    setBooks((prev) => [newBook, ...prev]); // Tambah ke atas list
     return newBook;
   }, []);
 
   const updateBook = useCallback(async (id: string, updates: Partial<Book>) => {
-    setBooksLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 300));
     setBooks((prev) =>
       prev.map((book) =>
         book.id === id
@@ -53,57 +71,43 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           : book
       )
     );
-    setBooksLoading(false);
   }, []);
 
   const deleteBook = useCallback(async (id: string) => {
-    setBooksLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 300));
     setBooks((prev) => prev.filter((book) => book.id !== id));
-    setBooksLoading(false);
   }, []);
 
-  // Loan operations
   const fetchLoans = useCallback(async () => {
     setLoansLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 300));
     setLoansLoading(false);
   }, []);
 
-  const createLoan = useCallback(
-    async (loan: Omit<Loan, 'id' | 'status' | 'return_date'>) => {
-      setLoansLoading(true);
-      const newLoan: Loan = {
-        ...loan,
-        id: Date.now().toString(),
-        return_date: null,
-        status: 'active',
-      };
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      
-      // Decrement book stock
-      setBooks((prev) =>
-        prev.map((book) => {
-          if (book.id === loan.book_id && book.stock > 0) {
-            const newStock = book.stock - 1;
-            return { ...book, stock: newStock, status: newStock > 0 ? 'available' : 'borrowed' };
-          }
-          return book;
-        })
-      );
-      
-      setLoans((prev) => [...prev, newLoan]);
-      setLoansLoading(false);
-      return newLoan;
-    },
-    []
-  );
+  const createLoan = useCallback(async (loan: Omit<Loan, 'id' | 'status' | 'return_date'>) => {
+    setLoansLoading(true);
+    const newLoan: Loan = {
+      ...loan,
+      id: Date.now().toString(),
+      return_date: null,
+      status: 'active',
+    };
+    
+    setBooks((prev) =>
+      prev.map((book) => {
+        if (book.id === loan.book_id && book.stock > 0) {
+          const newStock = book.stock - 1;
+          return { ...book, stock: newStock, status: newStock > 0 ? 'available' : 'borrowed' };
+        }
+        return book;
+      })
+    );
+    
+    setLoans((prev) => [...prev, newLoan]);
+    setLoansLoading(false);
+    return newLoan;
+  }, []);
 
   const returnBook = useCallback(async (loanId: string, bookId: string) => {
-    setLoansLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    
-    // Update loan status
     setLoans((prev) =>
       prev.map((loan) =>
         loan.id === loanId
@@ -112,7 +116,6 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       )
     );
     
-    // Increment book stock
     setBooks((prev) =>
       prev.map((book) => {
         if (book.id === bookId) {
@@ -122,56 +125,32 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         return book;
       })
     );
-    
-    setLoansLoading(false);
   }, []);
 
-  const getLoansByNis = useCallback(
-    (nis: string) => {
-      return loans
-        .filter((loan) => loan.student_nis === nis && loan.status === 'active')
-        .map((loan) => ({
-          ...loan,
-          book: books.find((b) => b.id === loan.book_id),
-        }));
-    },
-    [loans, books]
-  );
+  const getLoansByNis = useCallback((nis: string) => {
+    return loans
+      .filter((loan) => loan.student_nis === nis && loan.status === 'active')
+      .map((loan) => ({ ...loan, book: books.find((b) => b.id === loan.book_id) }));
+  }, [loans, books]);
 
   const getActiveLoans = useCallback(() => {
     return loans
       .filter((loan) => loan.status === 'active')
-      .map((loan) => ({
-        ...loan,
-        book: books.find((b) => b.id === loan.book_id),
-      }));
+      .map((loan) => ({ ...loan, book: books.find((b) => b.id === loan.book_id) }));
   }, [loans, books]);
 
   const getReturnedLoans = useCallback(() => {
     return loans
       .filter((loan) => loan.status === 'returned')
-      .map((loan) => ({
-        ...loan,
-        book: books.find((b) => b.id === loan.book_id),
-      }));
+      .map((loan) => ({ ...loan, book: books.find((b) => b.id === loan.book_id) }));
   }, [loans, books]);
 
   return (
     <LibraryContext.Provider
       value={{
-        books,
-        booksLoading,
-        addBook,
-        updateBook,
-        deleteBook,
-        loans,
-        loansLoading,
-        fetchLoans,
-        createLoan,
-        returnBook,
-        getLoansByNis,
-        getActiveLoans,
-        getReturnedLoans,
+        books, booksLoading, addBook, updateBook, deleteBook,
+        loans, loansLoading, fetchLoans, createLoan, returnBook,
+        getLoansByNis, getActiveLoans, getReturnedLoans,
       }}
     >
       {children}
@@ -181,8 +160,6 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
 
 export function useLibrary() {
   const context = useContext(LibraryContext);
-  if (!context) {
-    throw new Error('useLibrary must be used within a LibraryProvider');
-  }
+  if (!context) throw new Error('useLibrary must be used within a LibraryProvider');
   return context;
 }
