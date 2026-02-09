@@ -50,7 +50,7 @@ export default function Index() {
       <nav className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
         <div className="h-16 px-4 flex items-center justify-between max-w-7xl mx-auto md:h-20 md:px-6">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 bg-primary rounded-xl flex items-center justify-center">
+            <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center">
               <LayoutGrid className="h-5 w-5 text-white" />
             </div>
             <span className="font-bold text-lg md:text-xl">Perpustakaan.</span>
@@ -58,7 +58,7 @@ export default function Index() {
 
           <Link to="/admin">
             <Button variant="outline" className="rounded-full gap-2">
-              <Settings className="h-4 w-4" />
+              <Settings className="h-6 w-6" />
               <span className="hidden sm:inline">Admin</span>
             </Button>
           </Link>

@@ -193,7 +193,7 @@ export function AdminBookForm({ book, open, onOpenChange, onSave, onUpdate }: Ad
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] sm:h-[85vh] md:h-[80vh] p-0 overflow-hidden">
-        <div className="p-4 sm:p-6 pb-0">
+        <div className="p-4 sm:p-1000 pb-0">
           <DialogHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -204,31 +204,21 @@ export function AdminBookForm({ book, open, onOpenChange, onSave, onUpdate }: Ad
                   {isEditing ? 'Perbarui informasi buku.' : 'Cari otomatis atau isi manual.'}
                 </DialogDescription>
               </div>
-              {!isEditing && (
-                <Badge variant="outline" className="hidden sm:flex">
-                  <Search className="h-3 w-3 mr-1" />
-                  Google Books
-                </Badge>
-              )}
+              
             </div>
           </DialogHeader>
         </div>
 
         <ScrollArea className="flex-1 px-4 sm:px-6 pt-2">
-          {/* Google Books Search Section - Responsive */}
+          {/* Google Books Search Section */}
           {!isEditing && (
             <div className="border rounded-lg p-3 sm:p-4 bg-muted/40 mb-4 sm:mb-6 space-y-3 relative">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <Label className="text-xs font-bold tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <Search className="h-3 w-3" />
-                  <span className="hidden sm:inline">Quick Import</span>
-                  <span className="sm:hidden">Import Cepat</span>
-                  <span className="hidden sm:inline">(Google Books)</span>
-                </Label>
-                <Badge variant="secondary" className="sm:hidden text-[10px]">
-                  <Search className="h-2.5 w-2.5 mr-1" />
-                  Google Books
-                </Badge>
+                <Label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+  <Search className="h-3.5 w-3.5" />
+  Quick Import Google Books
+</Label>
+
               </div>
               
               <div className="flex flex-col sm:flex-row gap-2">
@@ -388,9 +378,6 @@ export function AdminBookForm({ book, open, onOpenChange, onSave, onUpdate }: Ad
                     placeholder="https://..."
                     className="text-xs h-8"
                   />
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    Masukkan URL gambar cover
-                  </p>
                 </div>
               </div>
 
