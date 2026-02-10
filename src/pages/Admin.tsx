@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useLibrary } from '@/contexts/LibraryContext';
 import { Book } from '@/types/library';
@@ -8,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-const ADMIN_PIN = '1234'; // Hardcoded PIN - replace with proper auth later
+const ADMIN_PIN = '1234'; 
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -55,8 +55,8 @@ export default function Admin() {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
+  const [activeTab, setActiveTab] = useState<'books' | 'active' | 'history'>('books');
 
-  // Check session storage for auth
   useEffect(() => {
     const auth = sessionStorage.getItem('admin_auth');
     if (auth === 'true') {
@@ -124,7 +124,6 @@ export default function Admin() {
   const activeLoans = getActiveLoans();
   const returnedLoans = getReturnedLoans();
 
-  // PIN Login Screen
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -173,173 +172,177 @@ export default function Admin() {
     );
   }
 
-  // Admin Panel
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-slate-900 pb-20 md:pb-0">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary text-primary-foreground">
-                <Library className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-foreground">Admin Panel</h1>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate('/')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Beranda
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Header */}
+<nav className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
+  <div className="h-16 px-4 flex items-center justify-between max-w-7xl mx-auto md:h-20 md:px-6">
+    {/* SISI KIRI: LOGO */}
+    <div className="flex items-center gap-3">
+      <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center">
+        <Library className="h-5 w-5 text-white" />
+      </div>
+      <span className="font-bold text-lg hidden lg:inline">Panel Admin</span>
+    </div>
 
+    {/* TENGAH: PILL TABS (Pindah ke sini) */}
+    <div className="relative inline-flex bg-slate-100 p-1 rounded-full scale-90 md:scale-100">
+      {[
+        { id: 'books', label: 'Buku', icon: BookMarked },
+        { id: 'active', label: `Aktif (${activeLoans.length})`, icon: LayoutDashboard },
+        { id: 'history', label: 'Riwayat', icon: History }
+      ].map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => setActiveTab(tab.id as any)}
+          className="relative px-3 py-1.5 md:px-5 md:py-2 text-xs md:text-sm font-semibold z-10 transition-colors"
+        >
+          {activeTab === tab.id && (
+            <motion.span
+              layoutId="admin-pill"
+              className="absolute inset-0 bg-white rounded-full shadow"
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <span className={`relative z-10 flex items-center gap-2 ${activeTab === tab.id ? 'text-primary' : 'text-slate-500'}`}>
+            <tab.icon className="h-4 w-4" />
+            <span className="hidden sm:inline">{tab.label.split(' ')[0]}</span> 
+            {tab.id === 'active' && <span className="text-[10px] bg-primary/10 px-1 rounded sm:hidden">{activeLoans.length}</span>}
+          </span>
+        </button>
+      ))}
+    </div>
+
+    {/* SISI KANAN: ACTIONS */}
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm" className="rounded-full hidden md:flex" onClick={() => navigate('/')}>
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Beranda
+      </Button>
+      <Button variant="ghost" size="sm" className="rounded-full" onClick={handleLogout}>
+        Logout
+      </Button>
+    </div>
+  </div>
+</nav>
+
+      
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="books" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
-            <TabsTrigger value="books" className="flex items-center gap-2">
-              <BookMarked className="h-4 w-4" />
-              Buku
-            </TabsTrigger>
-            <TabsTrigger value="active" className="flex items-center gap-2">
-              <LayoutDashboard className="h-4 w-4" />
-              Aktif ({activeLoans.length})
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              Riwayat
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Books Management Tab */}
-          <TabsContent value="books" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">Manajemen Buku</h2>
-                <p className="text-sm text-muted-foreground">
-                  Total: {books.length} buku
-                </p>
-              </div>
-              <Button onClick={handleAddBook}>
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah Buku
-              </Button>
-            </div>
-
-            <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Buku</TableHead>
-                        <TableHead>Kategori</TableHead>
-                        <TableHead>ISBN</TableHead>
-                        <TableHead>Stok</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Aksi</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {books.map((book) => (
-                        <TableRow key={book.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-14 rounded overflow-hidden bg-muted flex-shrink-0">
-                                {book.cover_url ? (
-                                  <img
-                                    src={book.cover_url}
-                                    alt={book.title}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <BookOpen className="h-4 w-4 text-muted-foreground/50" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-medium line-clamp-1">{book.title}</p>
-                                <p className="text-sm text-muted-foreground line-clamp-1">
-                                  {book.author}
-                                </p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary">{book.category}</Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {book.isbn || '-'}
-                          </TableCell>
-                          <TableCell className="font-medium">{book.stock}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={book.stock > 0 ? 'default' : 'destructive'}
-                              className={book.stock > 0 ? 'bg-primary' : ''}
-                            >
-                              {book.stock > 0 ? 'Tersedia' : 'Kosong'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditBook(book)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteClick(book)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+      <main className="max-w-7xl mx-auto px-4 py-6 md:px-6">
+        <AnimatePresence mode="wait">
+          {activeTab === 'books' && (
+            <motion.div
+              key="books"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold">Manajemen Buku</h2>
+                  <p className="text-sm text-muted-foreground">Total: {books.length} buku</p>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <Button onClick={handleAddBook}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tambah Buku
+                </Button>
+              </div>
 
-          {/* Active Loans Tab */}
-          <TabsContent value="active">
-            <LoanTable
-              loans={activeLoans}
-              title="Peminjaman Aktif"
-              description="Daftar buku yang sedang dipinjam oleh siswa"
-              emptyMessage="Tidak ada peminjaman aktif saat ini"
-            />
-          </TabsContent>
+              <Card>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Buku</TableHead>
+                          <TableHead>Kategori</TableHead>
+                          <TableHead>ISBN</TableHead>
+                          <TableHead>Stok</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Aksi</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {books.map((book) => (
+                          <TableRow key={book.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-14 rounded overflow-hidden bg-muted flex-shrink-0">
+                                  {book.cover_url ? (
+                                    <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <BookOpen className="h-4 w-4 text-muted-foreground/50" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-medium line-clamp-1">{book.title}</p>
+                                  <p className="text-sm text-muted-foreground line-clamp-1">{book.author}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell><Badge variant="secondary">{book.category}</Badge></TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{book.isbn || '-'}</TableCell>
+                            <TableCell className="font-medium">{book.stock}</TableCell>
+                            <TableCell>
+                              <Badge variant={book.stock > 0 ? 'default' : 'destructive'} className={book.stock > 0 ? 'bg-primary' : ''}>
+                                {book.stock > 0 ? 'Tersedia' : 'Kosong'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => handleEditBook(book)}><Pencil className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(book)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
-          {/* History Tab */}
-          <TabsContent value="history">
-            <LoanTable
-              loans={returnedLoans}
-              title="Riwayat Pengembalian"
-              description="Daftar buku yang telah dikembalikan"
-              showReturnDate
-              emptyMessage="Belum ada riwayat pengembalian"
-            />
-          </TabsContent>
-        </Tabs>
+          {activeTab === 'active' && (
+            <motion.div 
+              key="active"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <LoanTable
+                loans={activeLoans}
+                title="Peminjaman Aktif"
+                description="Daftar buku yang sedang dipinjam oleh siswa"
+                emptyMessage="Tidak ada peminjaman aktif saat ini"
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'history' && (
+            <motion.div 
+              key="history"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <LoanTable
+                loans={returnedLoans}
+                title="Riwayat Pengembalian"
+                description="Daftar buku yang telah dikembalikan"
+                showReturnDate
+                emptyMessage="Belum ada riwayat pengembalian"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
-      {/* Book Form Modal */}
       <AdminBookForm
         book={editingBook}
         open={bookFormOpen}
@@ -348,7 +351,6 @@ export default function Admin() {
         onUpdate={handleUpdateBook}
       />
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

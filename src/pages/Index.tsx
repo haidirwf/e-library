@@ -45,97 +45,94 @@ export default function Index() {
   }, [books, searchQuery, categoryFilter]);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 pb-20 md:pb-0">
-      {/* TOP NAV */}
+    <div className="min-h-screen bg-white text-slate-900">
+      {/* TOP NAV & TAB SWITCHER */}
       <nav className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
-        <div className="h-16 px-4 flex items-center justify-between max-w-7xl mx-auto md:h-20 md:px-6">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center">
-              <LayoutGrid className="h-5 w-5 text-white" />
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="h-16 flex items-center justify-between md:h-20">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center">
+                <LayoutGrid className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-bold text-lg md:text-xl hidden sm:inline">Perpustakaan.</span>
             </div>
-            <span className="font-bold text-lg md:text-xl">Perpustakaan.</span>
-          </div>
 
-          <Link to="/admin">
-            <Button variant="outline" className="rounded-full gap-2">
-              <Settings className="h-6 w-6" />
-              <span className="hidden sm:inline">Admin</span>
-            </Button>
-          </Link>
+            {/* TAB SWITCHER DI TENAH (DESKTOP & MOBILE) */}
+            <div className="bg-slate-100 p-1 rounded-full flex items-center">
+              {[
+                { id: 'catalog', label: 'Katalog', icon: BookOpen },
+                { id: 'return', label: 'Kembali', icon: RotateCcw }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className="relative px-4 py-1.5 text-xs md:text-sm font-semibold transition-colors flex items-center gap-2"
+                >
+                  {activeTab === tab.id && (
+                    <motion.span
+                      layoutId="tab-indicator"
+                      className="absolute inset-0 bg-white rounded-full shadow-sm"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className={`relative z-10 flex items-center gap-1.5 ${activeTab === tab.id ? 'text-primary' : 'text-slate-500'}`}>
+                    <tab.icon className="h-3.5 w-3.5 md:hidden" />
+                    {tab.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <Link to="/admin">
+              <Button variant="ghost" size="icon" className="rounded-full md:hidden">
+                <Settings className="h-5 w-5 text-slate-600" />
+              </Button>
+              <Button variant="outline" className="hidden md:flex rounded-full gap-2">
+                <Settings className="h-4 w-4" />
+                <span>Admin</span>
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* DESKTOP TAB */}
-      <div className="hidden md:block border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="relative inline-flex bg-slate-100 p-1 rounded-full">
-            {['catalog', 'return'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab as any)}
-                className="relative px-6 py-2 text-sm font-semibold z-10"
-              >
-                {activeTab === tab && (
-                  <motion.span
-                    layoutId="tab-indicator"
-                    className="absolute inset-0 bg-white rounded-full shadow"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
-                <span
-                  className={`relative ${
-                    activeTab === tab
-                      ? 'text-primary'
-                      : 'text-slate-500'
-                  }`}
-                >
-                  {tab === 'catalog' ? 'Katalog' : 'Pengembalian'}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* MAIN */}
-      <main className="max-w-7xl mx-auto px-4 py-6 md:px-6 md:py-12">
+      {/* MAIN CONTENT */}
+      <main className="max-w-7xl mx-auto px-4 py-6 md:px-6 md:py-10">
         <AnimatePresence mode="wait">
           {activeTab === 'catalog' ? (
             <motion.div
               key="catalog"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.25 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
             >
-              {/* HEADER */}
-              <div className="flex flex-col gap-6 mb-6 md:flex-row md:items-end md:justify-between">
-                <h2 className="text-2xl font-bold md:text-4xl">Koleksi Buku</h2>
+              {/* SEARCH & FILTER BAR */}
+              <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold md:text-3xl">Koleksi Buku</h2>
+                  <p className="text-slate-500 text-sm">Temukan bacaan favoritmu hari ini.</p>
+                </div>
 
-                <div className="flex flex-col gap-3 w-full sm:flex-row">
-                  <div className="relative w-full">
+                <div className="flex gap-2 w-full md:w-auto">
+                  <div className="relative flex-1 md:w-80">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
-                      className="pl-10 h-11 rounded-xl"
-                      placeholder="Cari judul atau penulis..."
+                      className="pl-10 h-11 rounded-2xl bg-slate-50 border-none focus-visible:ring-primary"
+                      placeholder="Cari buku..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
 
-                  <Select
-                    value={categoryFilter}
-                    onValueChange={setCategoryFilter}
-                  >
-                    <SelectTrigger className="w-full sm:w-44 h-11 rounded-xl">
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-[120px] md:w-[160px] h-11 rounded-2xl bg-slate-50 border-none">
                       <SelectValue placeholder="Kategori" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Semua Genre</SelectItem>
+                      <SelectItem value="all">Semua</SelectItem>
                       {BOOK_CATEGORIES.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -143,43 +140,42 @@ export default function Index() {
               </div>
 
               {/* GRID */}
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-5 xl:grid-cols-6">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {booksLoading
-                  ? [...Array(8)].map((_, i) => (
+                  ? [...Array(12)].map((_, i) => (
                       <div key={i} className="animate-pulse space-y-3">
                         <div className="aspect-[3/4] bg-slate-100 rounded-2xl" />
-                        <div className="h-4 bg-slate-100 rounded" />
+                        <div className="h-4 bg-slate-100 rounded w-3/4" />
                       </div>
                     ))
                   : filteredBooks.map((book) => (
                       <motion.div
                         key={book.id}
-                        whileHover={{ y: -4 }}
+                        whileHover={{ y: -6 }}
+                        transition={{ type: 'spring', stiffness: 300 }}
                         onClick={() => {
                           setSelectedBook(book);
                           setModalOpen(true);
                         }}
-                        className="cursor-pointer"
+                        className="group cursor-pointer"
                       >
-                        <div className="aspect-[3/4] rounded-2xl overflow-hidden border mb-3">
-                          <BookCard
-  book={book}
-  onClick={() => {
-    setSelectedBook(book);
-    setModalOpen(true);
-  }}
-/>
-
-                        </div>
-                        <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
-                          {book.category}
-                        </span>
-                        <h3 className="text-xs sm:text-sm font-bold line-clamp-2">
-                          {book.title}
-                        </h3>
-                        <div className="flex items-center gap-1 text-slate-500">
-                          <User className="h-3 w-3" />
-                          <p className="text-[11px] truncate">{book.author}</p>
+                        <div className="aspect-[3/4] rounded-2xl overflow-hidden border border-slate-100 shadow-sm transition-shadow group-hover:shadow-md mb-3">
+  <BookCard 
+    book={book} 
+    onClick={() => {
+      setSelectedBook(book);
+      setModalOpen(true);
+    }} 
+  />
+</div>
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/5 px-2 py-0.5 rounded">
+                            {book.category}
+                          </span>
+                          <h3 className="text-sm font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                            {book.title}
+                          </h3>
+                          <p className="text-[12px] text-slate-500 truncate">{book.author}</p>
                         </div>
                       </motion.div>
                     ))}
@@ -188,43 +184,20 @@ export default function Index() {
           ) : (
             <motion.div
               key="return"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.25 }}
-              className="max-w-2xl mx-auto"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-xl mx-auto pt-4"
             >
-              <h2 className="text-2xl font-bold mb-4 text-center">
-                Cek Pengembalian
-              </h2>
-              <div className="border rounded-3xl p-6">
+              <div className="bg-white border rounded-[2rem] p-8 shadow-sm">
+
                 <ReturnChecker />
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </main>
-
-      {/* MOBILE BOTTOM TAB */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t md:hidden">
-        <div className="grid grid-cols-2">
-          {[
-            { id: 'catalog', icon: BookOpen, label: 'Katalog' },
-            { id: 'return', icon: RotateCcw, label: 'Return' },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id as any)}
-              className={`py-3 flex flex-col items-center text-xs font-medium ${
-                activeTab === t.id ? 'text-primary' : 'text-slate-400'
-              }`}
-            >
-              <t.icon className="h-5 w-5 mb-1" />
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <BookDetailModal
         book={selectedBook}
